@@ -1,1 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB-HEX-BOT - Connexion WhatsApp</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="https://i.ibb.co/KcM77nr2/1771804016858.png" alt="IB-HEX-BOT Logo" class="logo">
+            <h1>IB-HEX-BOT</h1>
+            <p>Scanner le QR Code pour connecter votre WhatsApp</p>
+        </div>
 
+        <div class="qr-container" id="qrContainer">
+            <div class="qr-placeholder" id="qrPlaceholder">
+                <p>Chargement du QR Code...</p>
+            </div>
+        </div>
+
+        <div class="status" id="status">
+            <span class="status-indicator" id="statusIndicator"></span>
+            <span id="statusText">Déconnecté</span>
+        </div>
+
+        <div class="bot-info">
+            <h3>IB-HEX-BOT</h3>
+            <p>Propriétaire: Ibrahima Sory Sacko</p>
+            <p>Version: 1.0</p>
+            <p>Préfixe: Ib</p>
+        </div>
+
+        <div class="actions">
+            <button onclick="connect()" class="btn btn-success">Connexion</button>
+            <button onclick="disconnect()" class="btn btn-danger">Déconnexion</button>
+            <button onclick="refreshQR()" class="btn btn-primary">Rafraîchir QR</button>
+        </div>
+
+        <div class="footer">
+            <p>Bot créé par Ibrahima Sory Sacko | Développé avec ❤️</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
