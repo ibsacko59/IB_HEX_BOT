@@ -5,7 +5,7 @@ module.exports = {
     ownerName: "Ibrahima Sory Sacko",
     devName: "Ibrahim Sory Sacko",
     version: "1.0",
-    sessionFile: "./session.json",
+    sessionFile: "./session",
     // Remplacez par une image valide
     menuImage: "https://i.ibb.co/KcM77nr2/1771804016858.png", // Mettez un vrai lien d'image
     port: process.env.PORT || 3000
