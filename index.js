@@ -15,35 +15,52 @@ let connectionState = 'disconnected';
 
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('./session');
-    
+
     sock = makeWASocket({
-        printQRInTerminal: true,
         auth: state,
-        defaultQueryTimeoutMs: undefined
+        printQRInTerminal: false,
+        browser: ['IB-HEX-BOT', 'Chrome', '1.0.0']
     });
+
+    sock.ev.on('creds.update', saveCreds);
 
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
-        
+
         if (qr) {
-            qrCode = await QRCode.toDataURL(qr);
-            connectionState = 'qr';
-            console.log('QR Code généré');
+            try {
+                qrCode = await QRCode.toDataURL(qr);
+                connectionState = 'qr';
+                console.log('✅ QR CODE GÉNÉRÉ');
+            } catch (err) {
+                console.error('Erreur génération QR:', err);
+            }
+        }
+
+        if (connection === 'open') {
+            connectionState = 'connected';
+            qrCode = null;
+            console.log('🟢 CONNECTÉ À WHATSAPP');
         }
 
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            connectionState = 'disconnected';
+
+            const shouldReconnect =
+                lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+
             if (shouldReconnect) {
+                console.log('♻️ Reconnexion...');
                 connectToWhatsApp();
             } else {
-                connectionState = 'disconnected';
-                fs.rmSync(config.sessionFile, { recursive: true, force: true });
+                console.log('🔴 Déconnecté définitivement');
+                try {
+                    fs.rmSync('./session', { recursive: true, force: true });
+                } catch {}
             }
-        } else if (connection === 'open') {
-            connectionState = 'connected';
-            qrCode = null;
-            console.log('Connecté à WhatsApp');
         }
+    });
+
     });
 
     sock.ev.on('creds.update', saveCreds);
