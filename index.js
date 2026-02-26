@@ -14,7 +14,7 @@ let qrCode = null;
 let connectionState = 'disconnected';
 
 async function connectToWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState(config.sessionFile);
+    const { state, saveCreds } = await useMultiFileAuthState('./session');
     
     sock = makeWASocket({
         printQRInTerminal: true,
