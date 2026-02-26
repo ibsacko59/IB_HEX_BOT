@@ -8,28 +8,44 @@ function updateStatus() {
             const statusElement = document.getElementById('statusText');
             const indicatorElement = document.getElementById('statusIndicator');
             const qrContainer = document.getElementById('qrContainer');
+            const qrPlaceholder = document.getElementById('qrPlaceholder');
             
             currentStatus = data.status;
             
             // Mise à jour du texte de statut
             if (data.status === 'connected') {
-                statusElement.textContent = 'Connecté';
+                statusElement.textContent = 'Connecté ✓';
                 indicatorElement.className = 'status-indicator status-connected';
-                qrContainer.innerHTML = '<div class="qr-placeholder"><p>✅ Connecté à WhatsApp</p></div>';
-            } else if (data.status === 'qr') {
+                if (qrContainer) {
+                    qrContainer.innerHTML = '<div class="qr-placeholder"><p>✅ Connecté à WhatsApp</p><p class="success-message">Bot prêt à être utilisé !</p></div>';
+                }
+            } 
+            else if (data.status === 'qr') {
                 statusElement.textContent = 'QR Code disponible';
                 indicatorElement.className = 'status-indicator status-qr';
+                
+                // Afficher le QR code s'il existe
                 if (data.qr) {
-                    qrContainer.innerHTML = `<img src="${data.qr}" alt="QR Code" class="qr-code">`;
+                    qrContainer.innerHTML = `<img src="${data.qr}" alt="QR Code WhatsApp" class="qr-code">`;
+                    
+                    // Ajouter un message d'instruction
+                    const instruction = document.createElement('p');
+                    instruction.className = 'scan-instruction';
+                    instruction.innerHTML = '📱 Scannez ce QR code avec WhatsApp > Menu > Appareils connectés';
+                    qrContainer.appendChild(instruction);
+                } else {
+                    qrContainer.innerHTML = '<div class="qr-placeholder"><p>⏳ Génération du QR code...</p><div class="loader"></div></div>';
                 }
-            } else {
-                statusElement.textContent = 'Déconnecté';
+            } 
+            else {
+                statusElement.textContent = 'Déconnecté ✗';
                 indicatorElement.className = 'status-indicator status-disconnected';
-                qrContainer.innerHTML = '<div class="qr-placeholder"><p>📱 Scanner le QR Code pour connecter</p></div>';
+                qrContainer.innerHTML = '<div class="qr-placeholder"><p>📱 Cliquez sur "Connexion" pour générer le QR code</p></div>';
             }
         })
         .catch(error => {
             console.error('Erreur:', error);
+            document.getElementById('statusText').textContent = 'Erreur de connexion';
         });
 }
 
@@ -38,43 +54,51 @@ function connect() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showNotification('Connexion initiée...', 'success');
+                showNotification('Connexion initiée... Génération du QR code', 'success');
+                // Attendre un peu que le QR soit généré
+                setTimeout(updateStatus, 2000);
             }
         })
         .catch(error => {
-            showNotification('Erreur de connexion', 'error');
+            showNotification('Erreur de connexion au serveur', 'error');
         });
 }
 
 function disconnect() {
-    fetch('/api/disconnect')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification('Déconnecté avec succès', 'success');
-                updateStatus();
-            }
-        })
-        .catch(error => {
-            showNotification('Erreur lors de la déconnexion', 'error');
-        });
+    if (confirm('Voulez-vous vraiment déconnecter le bot ?')) {
+        fetch('/api/disconnect')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Déconnecté avec succès', 'success');
+                    updateStatus();
+                }
+            })
+            .catch(error => {
+                showNotification('Erreur lors de la déconnexion', 'error');
+            });
+    }
 }
 
 function refreshQR() {
     if (currentStatus === 'disconnected') {
         connect();
+    } else if (currentStatus === 'qr') {
+        // Forcer la régénération du QR
+        disconnect();
+        setTimeout(() => {
+            connect();
+        }, 2000);
     } else {
-        showNotification('Déjà connecté ou en cours', 'warning');
+        showNotification('Déjà connecté', 'info');
     }
 }
 
 function showNotification(message, type) {
-    // Créer l'élément de notification
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
     
-    // Style de la notification
     notification.style.position = 'fixed';
     notification.style.bottom = '20px';
     notification.style.right = '20px';
@@ -85,7 +109,6 @@ function showNotification(message, type) {
     notification.style.zIndex = '1000';
     notification.style.animation = 'slideInRight 0.3s ease-out';
     
-    // Couleurs selon le type
     if (type === 'success') {
         notification.style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
     } else if (type === 'error') {
@@ -96,41 +119,15 @@ function showNotification(message, type) {
     
     document.body.appendChild(notification);
     
-    // Animation de sortie
     setTimeout(() => {
         notification.style.animation = 'slideOutRight 0.3s ease-out';
         setTimeout(() => {
-            document.body.removeChild(notification);
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
         }, 300);
     }, 3000);
 }
-
-// Ajouter les animations CSS
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideInRight {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
 
 // Démarrer la mise à jour périodique
 updateStatus();
